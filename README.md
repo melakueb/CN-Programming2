@@ -23,11 +23,26 @@ This is a program for a bulletin board where users can join, post messages, see 
 
 ---
 
+Here’s how your information can be formatted properly for the **README**:
+
+---
+
 ## **Commands**
-- **Post a message**: `%post <message>`
-- **See users**: `%users`
-- **Get a message by ID**: `%message <ID>`
-- **Leave the group**: `%leave`
+
+### **Public Message Board Commands (Part 1)**:
+- **`%post <message>`**: Posts a message to the public group.
+- **`%users`**: Requests the list of users currently in the public group.
+- **`%message <ID>`**: Retrieves a specific message by its ID (like asking for an older post).
+- **`%leave`**: Exits the group and disconnects the user from the server.
+
+### **Private Group Commands (Part 2)**:
+- **`%groups`**: Lists the available private groups the user can join.
+- **`%groupjoin <group_name>`**: Joins a specific private group .
+- **`%groupleave`**: Leaves the current private group the user is in.
+
+---
+
+This formatting includes clear categories for **Part 1** and **Part 2** commands, making it easier for users to understand which commands are for public groups and which ones are for private groups. Let me know if you'd like further adjustments!
 
 ---
 
@@ -50,3 +65,6 @@ This is a program for a bulletin board where users can join, post messages, see 
    %leave
    ```
 
+# things to add to frontend
+- list of active users
+- list of cmds + what they mean
