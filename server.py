@@ -12,15 +12,16 @@ group_messages = {group: [] for group in available_groups}  # Tracks messages in
 user_sockets = {}  # Tracks active user sockets
 user_groups = {}  # Tracks groups joined by each user
 
-# Broadcast a message to all users in a specific group
+
 def broadcast_to_group(group, message, exclude_user=None):
+    """Broadcast a message to all users in a specific group."""
     for username in group_users[group]:
         if username != exclude_user and username in user_sockets:
             user_sockets[username].sendall(message.encode())
 
 
-# Handle individual client connections
 def handle_client(client_socket, client_address):
+    """Handle an individual client connection."""
     print(f"New connection from {client_address}")
     client_socket.send("Enter username: ".encode())
     username = client_socket.recv(1024).decode().strip()
@@ -104,28 +105,25 @@ def handle_client(client_socket, client_address):
             elif cmd == "%post" and len(parts) > 1:
                 # Post a message to the public board
                 message = " ".join(parts[1:])
-                if "Public" in user_groups[username]:
-                    msg_id = len(group_messages["Public"])
-                    group_messages["Public"].append((msg_id, username, message))
-                    broadcast_to_group("Public", f"[Public] {username}: {message}\n")
-                else:
-                    client_socket.send("You are not in the public board. Use %join to join it.\n".encode())
+                if "Public" not in group_messages:
+                    group_messages["Public"] = []
+                msg_id = len(group_messages["Public"])
+                group_messages["Public"].append((msg_id, username, message))
+                broadcast_to_group("Public", f"[Public] {username}: {message}\n")
 
             elif cmd == "%users":
                 # List all users in the public group or a specific group
-                group = "Public"
-                if group in group_users:
-                    users = group_users[group]
-                    client_socket.send(f"Users in {group}: {', '.join(users)}\n".encode())
-                else:
-                    client_socket.send("No users found in the public group.\n".encode())
+                all_users = set()
+                for group in user_groups[username]:
+                    all_users.update(group_users[group])
+                client_socket.send(f"Users in your groups: {', '.join(all_users)}\n".encode())
 
             elif cmd == "%leave":
                 # Leave all groups and disconnect
                 for group in user_groups[username]:
                     group_users[group].remove(username)
                 user_groups[username].clear()
-                client_socket.send("You have left all groups and the public board.\n".encode())
+                client_socket.send("You have left all groups and disconnected.\n".encode())
                 break
 
         except Exception as e:

@@ -21,7 +21,7 @@ def print_commands():
     print("%groupmessage <group> <id>   - Retrieve a specific message from a group by ID.")
     print("%groupleave <group>  - Leave a specific group.")
     print("%leave               - Exit all groups and disconnect.")
-    print("\nType a command to get started.\n")
+    print("\nEnter username to get started.\n")
 
 def start_client():
     # initialize client socket object

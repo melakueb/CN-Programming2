@@ -2,7 +2,7 @@
 ### Group: Elshaddai, Ikran, Fareena
 ---
 ## **Overview**
-This is a program for a bulletin board where users can join, post messages, see other users, and leave the group. It uses Python and basic socket programming.
+This is a program for a bulletin board where users can join, post messages, see other users, and leave the group. It uses Python and basic socket programming for networking.
 
 ---
 
@@ -23,7 +23,13 @@ This is a program for a bulletin board where users can join, post messages, see 
 
 ---
 
-Here’s how your information can be formatted properly for the **README**:
+### **GUI**
+1. Run in the terminal:
+   ``` bash
+   python3 gui.py
+   ```
+2. A window will open up. There will be two button labeled  Server Connect and Command Entry.
+3. Connect to the server then enter the command in the command entry. 
 
 ---
 
@@ -39,12 +45,6 @@ Here’s how your information can be formatted properly for the **README**:
 - **`%groups`**: Lists the available private groups the user can join.
 - **`%groupjoin <group_name>`**: Joins a specific private group .
 - **`%groupleave`**: Leaves the current private group the user is in.
-
----
-
-This formatting includes clear categories for **Part 1** and **Part 2** commands, making it easier for users to understand which commands are for public groups and which ones are for private groups. Let me know if you'd like further adjustments!
-
----
 
 ## **Example**
 1. Join with a username.
