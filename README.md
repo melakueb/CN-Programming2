@@ -48,3 +48,8 @@ This project implements a simple bulletin board system using socket programming 
 
 - **%groupleave [group name]**: Leaves the specified group.
 
+### **How to Navigate the GUI**
+1) Enter the server and host you want to connect to. Then click connect.
+2) Follow the prompt in the display to enter your username in the Command input entry.
+3) Use any commands you wish. If you need help with any commands, click on the help button and it will print a list of commands you can use. NOTE: you have to be a user in order to use the help button. So, enter your username first, then use the help button. 
+
