@@ -23,14 +23,6 @@ This is a program for a bulletin board where users can join, post messages, see 
 
 ---
 
-### **GUI**
-1. Run in the terminal:
-   ``` bash
-   python3 gui.py
-   ```
-2. A window will open up. There will be two button labeled  Server Connect and Command Entry.
-3. Connect to the server then enter the command in the command entry. 
-
 ---
 
 ## **Commands**
