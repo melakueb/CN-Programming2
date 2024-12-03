@@ -1,156 +1,268 @@
+# server.py
 import socket
 import threading
+from datetime import datetime
 
-# Server details
 HOST = '127.0.0.1'
-PORT = 3000
+PORT = 65432
 
-# Group and message data structures
-available_groups = ['Muchkin', 'EmeraldCity', 'YellowBrick', 'Quadling', 'Gillikin']
-group_users = {group: set() for group in available_groups}  # Tracks users in each group
-group_messages = {group: [] for group in available_groups}  # Tracks messages in each group
-user_sockets = {}  # Tracks active user sockets
-user_groups = {}  # Tracks groups joined by each user
+usernames = {}
+public_group = {
+    'clients': [],
+    'messages': []
+}
+groups = {
+    'group1': {'clients': [], 'messages': []},
+    'group2': {'clients': [], 'messages': []},
+    'group3': {'clients': [], 'messages': []},
+    'group4': {'clients': [], 'messages': []},
+    'group5': {'clients': [], 'messages': []},
+}
 
+def handle_client(conn, addr):
+    print(f"New connection from {addr}")
+    conn.send("Enter a username: ".encode())
+    username = conn.recv(1024).decode().strip()
 
-def broadcast_to_group(group, message, exclude_user=None):
-    """Broadcast a message to all users in a specific group."""
-    for username in group_users[group]:
-        if username != exclude_user and username in user_sockets:
-            user_sockets[username].sendall(message.encode())
+    while username in usernames.values():
+        conn.send("Username already taken. Enter a different username: ".encode())
+        username = conn.recv(1024).decode().strip()
 
+    usernames[conn] = username
+    conn.send(f"Welcome, {username}!".encode())
+    print(f"{username} has connected.")
 
-def handle_client(client_socket, client_address):
-    """Handle an individual client connection."""
-    print(f"New connection from {client_address}")
-    client_socket.send("Enter username: ".encode())
-    username = client_socket.recv(1024).decode().strip()
-    print(f"User {username} connected.")
+    user_in_public = False
+    user_groups = set()
 
-    # Add the user to the socket dictionary and initialize groups
-    user_sockets[username] = client_socket
-    user_groups[username] = set()
-
-    client_socket.send(f"Welcome {username}! Use %groups to see available groups.\n".encode())
-
-    while True:
-        try:
-            # Receive a command from the client
-            command = client_socket.recv(1024).decode().strip()
-            if not command:
+    try:
+        while True:
+            data = conn.recv(1024).decode()
+            if not data:
+                remove_client(conn, user_in_public, user_groups)
                 break
-
-            parts = command.split()
-            cmd = parts[0]
-
-            if cmd == "%groups":
-                # Send the list of available groups
-                client_socket.send(f"Available groups: {', '.join(available_groups)}\n".encode())
-
-            elif cmd == "%groupjoin" and len(parts) > 1:
-                # Join a specific group
-                group = parts[1]
-                if group in available_groups:
-                    if group not in user_groups[username]:
-                        user_groups[username].add(group)
-                        group_users[group].add(username)
-                        client_socket.send(f"Joined group {group}.\n".encode())
-                        broadcast_to_group(group, f"{username} has joined the group.\n", username)
+            if data.startswith('%join'):
+                if not user_in_public:
+                    public_group['clients'].append(conn)
+                    user_in_public = True
+                    conn.send("You have joined the public message board.".encode())
+                    # Notify others
+                    broadcast(f"{username} has joined the public message board.", conn, public_group['clients'])
+                    # Send last two messages
+                    if len(public_group['messages']) >= 2:
+                        for msg in public_group['messages'][-2:]:
+                            msg_summary = f"{msg['id']}, {msg['sender']}, {msg['date']}, {msg['subject']}"
+                            conn.send(msg_summary.encode())
+                    # Send users list
+                    user_list = ', '.join([usernames[c] for c in public_group['clients']])
+                    conn.send(f"Users in the public group: {user_list}".encode())
+                else:
+                    conn.send("You have already joined the public message board.".encode())
+            elif data.startswith('%post'):
+                if user_in_public:
+                    parts = data.split(' ', 2)
+                    if len(parts) < 3:
+                        conn.send("Usage: %post [subject] [content]".encode())
+                        continue
+                    subject = parts[1]
+                    content = parts[2]
+                    message_id = len(public_group['messages']) + 1
+                    post_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    message = {
+                        'id': message_id,
+                        'sender': username,
+                        'date': post_date,
+                        'subject': subject,
+                        'content': content
+                    }
+                    public_group['messages'].append(message)
+                    message_summary = f"{message_id}, {username}, {post_date}, {subject}"
+                    broadcast(message_summary, conn, public_group['clients'])
+                    conn.send("Message posted to the public message board.".encode())
+                else:
+                    conn.send("You need to join the public message board first using %join.".encode())
+            elif data.startswith('%users'):
+                if user_in_public:
+                    user_list = ', '.join([usernames[c] for c in public_group['clients']])
+                    conn.send(f"Users in the public group: {user_list}".encode())
+                else:
+                    conn.send("You are not in the public message board. Use %join to join.".encode())
+            elif data.startswith('%leave'):
+                if user_in_public:
+                    public_group['clients'].remove(conn)
+                    user_in_public = False
+                    broadcast(f"{username} has left the public message board.", conn, public_group['clients'])
+                    conn.send("You have left the public message board.".encode())
+                else:
+                    conn.send("You are not in the public message board.".encode())
+            elif data.startswith('%message'):
+                if user_in_public:
+                    parts = data.split()
+                    if len(parts) != 2:
+                        conn.send("Usage: %message [message ID]".encode())
+                        continue
+                    msg_id = int(parts[1])
+                    if 1 <= msg_id <= len(public_group['messages']):
+                        msg = public_group['messages'][msg_id - 1]
+                        msg_content = f"Message {msg['id']} Content:\nSender: {msg['sender']}\nDate: {msg['date']}\nSubject: {msg['subject']}\nContent: {msg['content']}"
+                        conn.send(msg_content.encode())
                     else:
-                        client_socket.send("You are already a member of this group.\n".encode())
+                        conn.send("Message ID not found.".encode())
                 else:
-                    client_socket.send("Invalid group name.\n".encode())
-
-            elif cmd == "%grouppost" and len(parts) > 2:
-                # Post a message to the group
-                group = parts[1]
-                message = " ".join(parts[2:])
-                if group in user_groups[username]:
-                    msg_id = len(group_messages[group])
-                    group_messages[group].append((msg_id, username, message))
-                    broadcast_to_group(group, f"Message [{msg_id}] from {username}: {message}\n")
+                    conn.send("You are not in the public message board. Use %join to join.".encode())
+            elif data.startswith('%groups'):
+                group_list = ', '.join(groups.keys())
+                conn.send(f"Available groups: {group_list}".encode())
+            elif data.startswith('%groupjoin'):
+                parts = data.split()
+                if len(parts) != 2:
+                    conn.send("Usage: %groupjoin [group name]".encode())
+                    continue
+                group_name = parts[1]
+                if group_name in groups:
+                    if group_name not in user_groups:
+                        groups[group_name]['clients'].append(conn)
+                        user_groups.add(group_name)
+                        conn.send(f"You have joined group {group_name}.".encode())
+                        group_broadcast(f"{username} has joined group {group_name}.", conn, group_name)
+                        # Send last two messages
+                        group_msgs = groups[group_name]['messages']
+                        if len(group_msgs) >= 2:
+                            for msg in group_msgs[-2:]:
+                                msg_summary = f"{msg['id']}, {msg['sender']}, {msg['date']}, {msg['subject']}"
+                                conn.send(f"[{group_name}] {msg_summary}".encode())
+                    else:
+                        conn.send(f"You are already a member of group {group_name}.".encode())
                 else:
-                    client_socket.send("You are not a member of this group.\n".encode())
-
-            elif cmd == "%groupusers" and len(parts) > 1:
-                # List users in the group
-                group = parts[1]
-                if group in user_groups[username]:
-                    users = group_users[group]
-                    client_socket.send(f"Users in {group}: {', '.join(users)}\n".encode())
+                    conn.send("Group does not exist.".encode())
+            elif data.startswith('%grouppost'):
+                parts = data.split(' ', 3)
+                if len(parts) < 4:
+                    conn.send("Usage: %grouppost [group name] [subject] [content]".encode())
+                    continue
+                group_name = parts[1]
+                if group_name in user_groups:
+                    subject = parts[2]
+                    content = parts[3]
+                    message_id = len(groups[group_name]['messages']) + 1
+                    post_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    message = {
+                        'id': message_id,
+                        'sender': username,
+                        'date': post_date,
+                        'subject': subject,
+                        'content': content
+                    }
+                    groups[group_name]['messages'].append(message)
+                    message_summary = f"{message_id}, {username}, {post_date}, {subject}"
+                    group_broadcast(f"[{group_name}] {message_summary}", conn, group_name)
+                    conn.send(f"Message posted to group {group_name}.".encode())
                 else:
-                    client_socket.send("You are not a member of this group.\n".encode())
-
-            elif cmd == "%groupmessage" and len(parts) > 2:
-                # Fetch a specific message by ID from the group
-                group = parts[1]
-                msg_id = int(parts[2])
-                if group in user_groups[username] and msg_id < len(group_messages[group]):
-                    _, sender, content = group_messages[group][msg_id]
-                    client_socket.send(f"Message {msg_id} from {sender}: {content}\n".encode())
+                    conn.send("You are not a member of this group.".encode())
+            elif data.startswith('%groupusers'):
+                parts = data.split()
+                if len(parts) != 2:
+                    conn.send("Usage: %groupusers [group name]".encode())
+                    continue
+                group_name = parts[1]
+                if group_name in groups:
+                    if group_name in user_groups:
+                        user_list = ', '.join([usernames[c] for c in groups[group_name]['clients']])
+                        conn.send(f"Users in group {group_name}: {user_list}".encode())
+                    else:
+                        conn.send("You are not a member of this group.".encode())
                 else:
-                    client_socket.send("Message ID not found or you are not a member of this group.\n".encode())
-
-            elif cmd == "%groupleave" and len(parts) > 1:
-                # Leave a specific group
-                group = parts[1]
-                if group in user_groups[username]:
-                    user_groups[username].remove(group)
-                    group_users[group].remove(username)
-                    client_socket.send(f"Left group {group}.\n".encode())
-                    broadcast_to_group(group, f"{username} has left the group.\n", username)
+                    conn.send("Group does not exist.".encode())
+            elif data.startswith('%groupleave'):
+                parts = data.split()
+                if len(parts) != 2:
+                    conn.send("Usage: %groupleave [group name]".encode())
+                    continue
+                group_name = parts[1]
+                if group_name in groups:
+                    if group_name in user_groups:
+                        groups[group_name]['clients'].remove(conn)
+                        user_groups.remove(group_name)
+                        conn.send(f"You have left group {group_name}.".encode())
+                        group_broadcast(f"{username} has left group {group_name}.", conn, group_name)
+                    else:
+                        conn.send("You are not a member of this group.".encode())
                 else:
-                    client_socket.send("You are not a member of this group.\n".encode())
-
-            elif cmd == "%post" and len(parts) > 1:
-                # Post a message to the public board
-                message = " ".join(parts[1:])
-                if "Public" not in group_messages:
-                    group_messages["Public"] = []
-                msg_id = len(group_messages["Public"])
-                group_messages["Public"].append((msg_id, username, message))
-                broadcast_to_group("Public", f"[Public] {username}: {message}\n")
-
-            elif cmd == "%users":
-                # List all users in the public group or a specific group
-                all_users = set()
-                for group in user_groups[username]:
-                    all_users.update(group_users[group])
-                client_socket.send(f"Users in your groups: {', '.join(all_users)}\n".encode())
-
-            elif cmd == "%leave":
-                # Leave all groups and disconnect
-                for group in user_groups[username]:
-                    group_users[group].remove(username)
-                user_groups[username].clear()
-                client_socket.send("You have left all groups and disconnected.\n".encode())
+                    conn.send("Group does not exist.".encode())
+            elif data.startswith('%groupmessage'):
+                parts = data.split()
+                if len(parts) != 3:
+                    conn.send("Usage: %groupmessage [group name] [message ID]".encode())
+                    continue
+                group_name = parts[1]
+                if group_name in groups:
+                    if group_name in user_groups:
+                        msg_id = int(parts[2])
+                        group_msgs = groups[group_name]['messages']
+                        if 1 <= msg_id <= len(group_msgs):
+                            msg = group_msgs[msg_id - 1]
+                            msg_content = f"Message {msg['id']} in group {group_name}:\nSender: {msg['sender']}\nDate: {msg['date']}\nSubject: {msg['subject']}\nContent: {msg['content']}"
+                            conn.send(msg_content.encode())
+                        else:
+                            conn.send("Message ID not found.".encode())
+                    else:
+                        conn.send("You are not a member of this group.".encode())
+                else:
+                    conn.send("Group does not exist.".encode())
+            elif data.startswith('%exit'):
+                conn.send('Disconnecting...'.encode())
+                remove_client(conn, user_in_public, user_groups)
                 break
+            else:
+                conn.send("Invalid command.".encode())
+    except ConnectionResetError:
+        remove_client(conn, user_in_public, user_groups)
 
-        except Exception as e:
-            print(f"Error handling command from {username}: {e}")
-            break
+def broadcast(message, sender_conn, group):
+    for client in group:
+        if client != sender_conn:
+            try:
+                client.send(message.encode())
+            except:
+                remove_client(client, False, set())
 
-    # Cleanup user
-    if username in user_sockets:
-        del user_sockets[username]
-        for group in user_groups[username]:
-            group_users[group].remove(username)
-        del user_groups[username]
-    client_socket.close()
-    print(f"User {username} disconnected.")
+def group_broadcast(message, sender_conn, group_name):
+    group = groups[group_name]['clients']
+    for client in group:
+        if client != sender_conn:
+            try:
+                client.send(message.encode())
+            except:
+                remove_client(client, False, set())
 
+def remove_client(conn, user_in_public, user_groups):
+    username = usernames.get(conn, 'Unknown')
+    if conn in usernames:
+        del usernames[conn]
+    if user_in_public and conn in public_group['clients']:
+        public_group['clients'].remove(conn)
+        broadcast(f"{username} has left the public message board.", conn, public_group['clients'])
+    for group_name in list(user_groups):
+        if conn in groups[group_name]['clients']:
+            groups[group_name]['clients'].remove(conn)
+            group_broadcast(f"{username} has left group {group_name}.", conn, group_name)
+    conn.close()
+    print(f"{username} has disconnected.")
 
 def start_server():
-    """Start the server and handle incoming connections."""
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((HOST, PORT))
-    server_socket.listen(5)
-    print(f"Server running on {HOST}:{PORT}")
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((HOST, PORT))
+    server.listen()
+    print(f"Server is listening on {HOST}:{PORT}")
 
-    while True:
-        client_socket, client_address = server_socket.accept()
-        threading.Thread(target=handle_client, args=(client_socket, client_address), daemon=True).start()
-
+    try:
+        while True:
+            conn, addr = server.accept()
+            thread = threading.Thread(target=handle_client, args=(conn, addr))
+            thread.start()
+    except KeyboardInterrupt:
+        print("Server is shutting down.")
+        server.close()
 
 if __name__ == "__main__":
     start_server()
