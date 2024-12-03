@@ -21,7 +21,9 @@ def main():
     connected = False
     while True:
         command = input()
-        if command.startswith('%connect'):
+        if command.startswith('%help'):
+            display_help()  # Display available commands
+        elif command.startswith('%connect'):
             if connected:
                 print("Already connected to a server.")
                 continue
@@ -40,7 +42,7 @@ def main():
                 receive_thread.daemon = True
                 receive_thread.start()
                 # Handle username input
-                username = input()
+                username = input("Enter your username: ")
                 sock.send(username.encode())
             except ConnectionRefusedError:
                 print("Unable to connect to the server.")
@@ -65,6 +67,28 @@ def main():
                 if command.startswith('%exit'):
                     connected = False
                     break
+
+def display_help():
+    """Display available commands."""
+    print("""
+Available Commands:
+%connect [address] [port]  - Connect to the server.
+%join                      - Join the public message board.
+%post [subject] [content]  - Post a message to the public board.
+%users                     - List users in the public message board.
+%message [message ID]      - Retrieve a specific message by ID.
+%leave                     - Leave the public message board.
+%groups                    - List all available private groups.
+%groupjoin [group name]    - Join a private group.
+%grouppost [group name] [subject] [content] - Post a message to a private group.
+%groupusers [group name]   - List users in a specific group.
+%groupleave [group name]   - Leave a specific private group.
+%groupmessage [group name] [message ID] - Retrieve a message by ID in a private group.
+%exit                      - Disconnect from the server and exit.
+%help                      - Display this help message.
+""")
+
+
 
 if __name__ == "__main__":
     main()

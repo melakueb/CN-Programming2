@@ -4,7 +4,7 @@ import threading
 from datetime import datetime
 
 HOST = '127.0.0.1'
-PORT = 65432
+PORT = 3000  # Updated port
 
 usernames = {}
 public_group = {
@@ -12,11 +12,11 @@ public_group = {
     'messages': []
 }
 groups = {
-    'group1': {'clients': [], 'messages': []},
-    'group2': {'clients': [], 'messages': []},
-    'group3': {'clients': [], 'messages': []},
-    'group4': {'clients': [], 'messages': []},
-    'group5': {'clients': [], 'messages': []},
+    'Munchkin': {'clients': [], 'messages': []},
+    'Winkie': {'clients': [], 'messages': []},
+    'Quadling': {'clients': [], 'messages': []},
+    'Gilikin': {'clients': [], 'messages': []},
+    'EmeraldCity': {'clients': [], 'messages': []},
 }
 
 def handle_client(conn, addr):
