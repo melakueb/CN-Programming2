@@ -1,10 +1,10 @@
-# the tkinter package will be used for the gui
+# The tkinter package will be used for the gui
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import socket
 import threading
 
-#functions below that will customize the widget and connect to the client.py and server.py code
+#Functions below that will customize the widget and connect to the client.py and server.py code
 class BulletinBoardGUI:
     def __init__(self, master):
         self.master = master
@@ -14,7 +14,7 @@ class BulletinBoardGUI:
         self.connected = False
         self.create_widgets()
     
-    #widgets for the gui customization
+    #Widgets for the gui customization
     def create_widgets(self):
 
         # The connection frame made below
