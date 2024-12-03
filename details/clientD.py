@@ -17,6 +17,11 @@ def receive_messages(sock):
             break
 
 def main():
+    # Display welcome message
+    print("Welcome to our Bulletin Board of Oz!")
+    print("Use %connect to connect to the server.")
+    print("Use %help to see available commands.")
+
     sock = None
     connected = False
     while True:
