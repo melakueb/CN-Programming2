@@ -1,16 +1,22 @@
 # server.py
+
+#import socket,threading
 import socket
 import threading
+#import for message date
 from datetime import datetime
 
+#define host and port for server
 HOST = '127.0.0.1'
-PORT = 3000  # Updated port
+PORT = 3000  
 
+#lists to hold users, messages for public & private groups
 usernames = {}
 public_group = {
     'clients': [],
     'messages': []
 }
+#bulletin board of oz 
 groups = {
     'Munchkin': {'clients': [], 'messages': []},
     'Winkie': {'clients': [], 'messages': []},
@@ -19,30 +25,37 @@ groups = {
     'EmeraldCity': {'clients': [], 'messages': []},
 }
 
+#handle communication with each client via their own thread
 def handle_client(conn, addr):
+    #prompt for username
     print(f"New connection from {addr}")
     conn.send("Enter a username: ".encode())
     username = conn.recv(1024).decode().strip()
 
+    #in case user already taken
     while username in usernames.values():
         conn.send("Username already taken. Enter a different username: ".encode())
         username = conn.recv(1024).decode().strip()
 
+    #add to usernames and welcome message
     usernames[conn] = username
     conn.send(f"Welcome, {username}!".encode())
     conn.send("\nUse %help to see available commands.".encode())
 
+    #print to server
     print(f"{username} has connected.")
 
+    #boolean for if in public
     user_in_public = False
     user_groups = set()
 
+    #listen for commands from client
     try:
         while True:
+            #receive command from client
             data = conn.recv(1024).decode()
-            if not data:
-                remove_client(conn, user_in_public, user_groups)
-                break
+
+            #%join command for public board
             if data.startswith('%join'):
                 if not user_in_public:
                     public_group['clients'].append(conn)
@@ -60,6 +73,8 @@ def handle_client(conn, addr):
                     conn.send(f"Users in the public group: {user_list}".encode())
                 else:
                     conn.send("You have already joined the public message board.".encode())
+            
+            #%post command
             elif data.startswith('%post'):
                 if user_in_public:
                     parts = data.split(' ', 2)
@@ -83,12 +98,16 @@ def handle_client(conn, addr):
                     conn.send("Message posted to the public message board.".encode())
                 else:
                     conn.send("You need to join the public message board first using %join.".encode())
+            
+            #%users command
             elif data.startswith('%users'):
                 if user_in_public:
                     user_list = ', '.join([usernames[c] for c in public_group['clients']])
                     conn.send(f"Users in the public group: {user_list}".encode())
                 else:
                     conn.send("You are not in the public message board. Use %join to join.".encode())
+            
+            #%leave command
             elif data.startswith('%leave'):
                 if user_in_public:
                     public_group['clients'].remove(conn)
@@ -97,6 +116,8 @@ def handle_client(conn, addr):
                     conn.send("You have left the public message board.".encode())
                 else:
                     conn.send("You are not in the public message board.".encode())
+            
+            #%message command
             elif data.startswith('%message'):
                 if user_in_public:
                     parts = data.split()
@@ -112,9 +133,15 @@ def handle_client(conn, addr):
                         conn.send("Message ID not found.".encode())
                 else:
                     conn.send("You are not in the public message board. Use %join to join.".encode())
+            
+            #commands for groups
+            
+            #%groups command
             elif data.startswith('%groups'):
                 group_list = ', '.join(groups.keys())
                 conn.send(f"Available groups: {group_list}".encode())
+            
+            #%groupjoin
             elif data.startswith('%groupjoin'):
                 parts = data.split()
                 if len(parts) != 2:
