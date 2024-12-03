@@ -30,6 +30,8 @@ def handle_client(conn, addr):
 
     usernames[conn] = username
     conn.send(f"Welcome, {username}!".encode())
+    conn.send("\nUse %help to see available commands.".encode())
+
     print(f"{username} has connected.")
 
     user_in_public = False
