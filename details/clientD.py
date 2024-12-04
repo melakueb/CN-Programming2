@@ -116,3 +116,65 @@ def display_help():
 
 if __name__ == "__main__":
     main()
+
+
+
+# Python to Java Migration Attempt
+
+# // JavaClient.java
+# import java.io.*;
+# import java.net.*;
+# import java.util.Scanner;
+
+# /*
+#  * Incomplete Java client for the bulletin board system.
+#  * We started setting up the connection but faced issues and stopped early.
+#  */
+
+# public class JavaClient {
+#     private Socket socket;
+#     private PrintWriter out;
+#     private Scanner scanner;
+
+#     public JavaClient() {
+#         scanner = new Scanner(System.in);
+#     }
+
+#     public void start() {
+#         System.out.print("Enter server address: ");
+#         String address = scanner.nextLine();
+#         System.out.print("Enter server port: ");
+#         int port = Integer.parseInt(scanner.nextLine());
+
+#         try {
+#             // Attempt to connect to the server
+#             socket = new Socket(address, port);
+#             System.out.println("Connected to the server.");
+
+#             // Set up output stream
+#             out = new PrintWriter(socket.getOutputStream(), true);
+
+#             // We intended to set up input stream and start sending commands
+#             // But faced issues with blocking calls and encoding
+
+#             // Decided to stop here due to time constraints and focus on Python client
+#         } catch (IOException e) {
+#             System.err.println("IOException: " + e.getMessage());
+#             // Encountered issues with socket connection, possibly due to server compatibility
+#         } finally {
+#             // Cleanup resources
+#             try {
+#                 if (out != null) out.close();
+#                 if (socket != null) socket.close();
+#                 scanner.close();
+#             } catch (IOException e) {
+#                 System.err.println("IOException during closing connections: " + e.getMessage());
+#             }
+#         }
+#     }
+
+#     public static void main(String[] args) {
+#         JavaClient client = new JavaClient();
+#         client.start();
+#     }
+# }
