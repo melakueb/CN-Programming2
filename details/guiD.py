@@ -1,10 +1,10 @@
-# The tkinter package will be used for the gui
+# the tkinter package will be used for the gui
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import socket
 import threading
 
-#Functions below that will customize the widget and connect to the client.py and server.py code
+#functions below that will customize the widget and connect to the client.py and server.py code
 class BulletinBoardGUI:
     def __init__(self, master):
         self.master = master
@@ -14,11 +14,12 @@ class BulletinBoardGUI:
         self.connected = False
         self.create_widgets()
     
-    #Widgets for the gui customization
+    #widgets for the gui customization
     def create_widgets(self):
 
         # The connection frame made below
         self.connection_frame = ttk.LabelFrame(self.master, text="Connection")
+        
         self.connection_frame.pack(padx=10, pady=5, fill="x")
         # making and labeling the server ip entry
         self.server_ip_label = ttk.Label(self.connection_frame, text="Server IP:")
@@ -30,8 +31,9 @@ class BulletinBoardGUI:
         self.server_port_label = ttk.Label(self.connection_frame, text="Port:")
         self.server_port_label.grid(row=1, column=0, padx=5, pady=5)
         self.server_port_entry = ttk.Entry(self.connection_frame)
-        self.server_port_entry.insert(0, "65432")
+        self.server_port_entry.insert(0, "3000")
         self.server_port_entry.grid(row=1, column=1, padx=5, pady=5)
+        
         #making and labeling the connect button that will connect to the server using the port and server number
         self.connect_button = ttk.Button(self.connection_frame, text="Connect", command=self.connect_to_server)
         self.connect_button.grid(row=0, column=2, rowspan=2, padx=5, pady=5)
@@ -44,6 +46,7 @@ class BulletinBoardGUI:
         self.command_entry = ttk.Entry(self.command_frame)
         self.command_entry.pack(side=tk.LEFT, fill="x", expand=True, padx=5, pady=5)
         self.command_entry.bind('<Return>', lambda event: self.send_command())
+        
         # Send button code here
         self.send_button = ttk.Button(self.command_frame, text="Send", command=self.send_command)
         self.send_button.pack(side=tk.RIGHT, padx=5, pady=5)
@@ -121,6 +124,7 @@ class BulletinBoardGUI:
         self.message_display.insert(tk.END, message + "\n")
         self.message_display.config(state='disabled')
         self.message_display.see(tk.END)
+        
 #Functions to get and all commands that can be used
     def show_commands(self):
         commands = self.get_command_list()
