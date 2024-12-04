@@ -66,8 +66,7 @@ def main():
                 username = input("Enter your username: ")
                 sock.send(username.encode())
 
-            except:
-                #error handling if server unavailble
+            except ConnectionRefusedError:
                 print("Unable to connect to the server.")
                 sock.close()
                 sock = None
@@ -82,7 +81,16 @@ def main():
             else:
                 print("You are not connected to any server.")
             break
-
+        else:
+            if not connected:
+                print("You are not connected to any server. Use %connect to connect.")
+                continue
+            else:
+                # Send command to server
+                sock.send(command.encode())
+                if command.startswith('%exit'):
+                    connected = False
+                    break
 
 def display_help():
     """Display available commands."""
