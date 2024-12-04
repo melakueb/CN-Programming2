@@ -53,3 +53,18 @@ This project implements a simple bulletin board system using socket programming 
 2) Follow the prompt in the display to enter your username in the Command input entry.
 3) Use any commands you wish. If you need help with any commands, click on the help button and it will print a list of commands you can use. NOTE: you have to be a user in order to use the help button. So, enter your username first, then use the help button. 
 
+
+### **Major Issues Encountered**
+As we completed this project, we ran into some issues that served as barriers that have since been resolved. These include:
+1) Active Groups
+-- Issue: Initially, we attempted to track all groups a user joined and determine the "active group" for posting based on the most recent group. This approach was not working well.
+-- Resolution: The current implementation eliminates the need for an "active group" by requiring users to specify the group name explicitly when posting (e.g., %grouppost [group name] [subject] [content]). This ensures clarity and allows users to interact with multiple groups without ambiguity.
+
+2) Handling Connections
+-- Issue: The server initially struggled to recognize when users disconnected
+-- Resolution: The remove_client function now reliably removes users from all groups upon disconnection and notifies others. Improved error handling ensures that lingering connections are cleaned up effectively.
+
+3) Message ID Assignment
+-- Issue: Message IDs were incorrectly assigned, which made message retrieval unreliable.
+-- Resolution: IDs are now assigned sequentially based on the length of the messages list in each group, ensuring unique and consistent message tracking.
+
