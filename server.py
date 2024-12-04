@@ -4,7 +4,7 @@ import threading
 from datetime import datetime
 
 HOST = '127.0.0.1'
-PORT = 65432
+PORT = 3000
 
 usernames = {}
 public_group = {
