@@ -8,7 +8,7 @@ import threading
 class BulletinBoardGUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("Bulletin Board")  # Window title
+        self.master.title("Bulletin Board of Oz")  # Window title
         self.master.geometry("600x400")
         self.sock = None
         self.connected = False
